@@ -1,2 +1,3 @@
 # pancake
-scripts that do math
+scripts to solve math problems to solve our world problems
+
