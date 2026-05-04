@@ -1,18 +1,11 @@
 import discord
-from discord.ext import commands
 
-# Basic setup with necessary permissions
-intents = discord.Intents.default()
-intents.message_content = True  # Allows bot to read message content
-
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-@bot.event
-async def on_ready():
-    print(f'Logged in as {bot.user}')
-
-@bot.command()
-async def ping(ctx):
-    await ctx.send('pong!')
-
-bot.run('YOUR_BOT_TOKEN')
+class Client(discord.Client):
+    async def on_ready(self):
+        print(f'logged as {self.user}')
+    async def on_message(self,message):
+        print(f'{message.author} said {message.content}')
+intents=discord.Intents.default()
+intents.message_content=True    
+client=Client(intents=intents)
+client.run("")
