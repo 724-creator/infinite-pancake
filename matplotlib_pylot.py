@@ -1,8 +1,9 @@
-import matplotlib.pylot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
-xpoints=np.array([0,6])
-ypoints=np.array([0,250])
+X=np.linspace(0,10,100)
+Y=np.sin(X)
 
-plt.plot(xpoints,ypoints)
-plt.show #small vitory!! 
+fig,ax=plt.subplots()
+ax.plot(X,Y,linewidth=2,color='red',label='sin(x)')
+plt.show()
