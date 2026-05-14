@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive H-R Diagram with Stellar AI Assistant</title>
+    <title>Interactive H-R Diagram with AI Assistant</title>
     <style>
         body {
             margin: 0;
@@ -21,18 +21,19 @@
         .main-container {
             display: flex;
             flex-direction: row;
-            max-width: 1200px;
+            max-width: 1400px;
             width: 100%;
             gap: 20px;
         }
         .diagram-section {
-            flex: 1.3;
+            flex: 1.5;
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 15px;
         }
         h1 {
-            margin: 0 0 15px 0;
+            margin: 0;
             font-size: 1.5rem;
             letter-spacing: 1px;
             text-align: center;
@@ -47,6 +48,7 @@
         canvas {
             display: block;
             border-radius: 4px;
+            cursor: crosshair;
         }
         .tooltip {
             position: absolute;
@@ -62,9 +64,81 @@
             line-height: 1.4;
             z-index: 10;
         }
+        .plot-controls {
+            background: #111625;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 15px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .plot-controls h3 {
+            margin: 0 0 12px 0;
+            font-size: 0.95rem;
+            color: #38bdf8;
+        }
+        .control-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .control-input {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 120px;
+        }
+        .control-input label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .control-input input {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .control-input input:focus {
+            outline: none;
+            border-color: #38bdf8;
+        }
+        .plot-button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            align-self: flex-end;
+            transition: background 0.2s;
+        }
+        .plot-button:hover {
+            background: #059669;
+        }
+        .clear-button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+        .clear-button:hover {
+            background: #dc2626;
+        }
         /* Chatbot UI Layout Styling */
         .chat-section {
-            flex: 0.7;
+            flex: 0.85;
             background: #111625;
             border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -95,7 +169,7 @@
             gap: 12px;
         }
         .message {
-            max-width: 85%;
+            max-width: 90%;
             padding: 10px 14px;
             border-radius: 8px;
             font-size: 0.88rem;
@@ -112,6 +186,10 @@
             background: #0284c7;
             color: #ffffff;
             align-self: flex-end;
+        }
+        .message.loading {
+            opacity: 0.7;
+            font-style: italic;
         }
         .chat-input-area {
             padding: 12px;
@@ -155,6 +233,8 @@
             gap: 6px;
             padding: 0 12px 10px 12px;
             background: #0f1420;
+            overflow-y: auto;
+            max-height: 60px;
         }
         .chip {
             background: #1e293b;
@@ -165,6 +245,7 @@
             font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .chip:hover {
             border-color: #38bdf8;
@@ -183,25 +264,49 @@
             <canvas id="hrCanvas" width="700" height="540"></canvas>
             <div id="tooltip" class="tooltip"></div>
         </div>
+
+        <!-- Star Plotting Controls -->
+        <div class="plot-controls">
+            <h3>📍 Plot Your Own Star</h3>
+            <div class="control-row">
+                <div class="control-input">
+                    <label>Temperature (K)</label>
+                    <input type="number" id="tempInput" placeholder="e.g., 5778" value="5778" min="1000" max="50000">
+                </div>
+                <div class="control-input">
+                    <label>Luminosity (L☉)</label>
+                    <input type="number" id="lumInput" placeholder="e.g., 1" value="1" min="0.0001" max="1000000" step="any">
+                </div>
+                <div class="control-input">
+                    <label>Star Name</label>
+                    <input type="text" id="starNameInput" placeholder="e.g., Vega">
+                </div>
+            </div>
+            <div class="control-row">
+                <button class="plot-button" onclick="plotCustomStar()">Plot Star</button>
+                <button class="clear-button" onclick="clearCustomStars()">Clear Custom Stars</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Right Section: Rule-Based Conversational Intelligence Engine -->
+    <!-- Right Section: AI Chat -->
     <div class="chat-section">
         <div class="chat-header">
             <span>✨ Stellar Knowledge Assistant</span>
         </div>
         <div class="chat-messages" id="chatMessages">
             <div class="message ai">
-                Hello! I am your stellar astrophysics assistant. Ask me anything about the Hertzsprung-Russell (H-R) diagram, star classifications, or the famous stars highlighted on the chart!
+                Hello! I'm your AI astrophysics assistant powered by Claude. Ask me anything about the Hertzsprung-Russell diagram, star classification, stellar evolution, or try plotting your own stars on the chart!
             </div>
         </div>
         <div class="suggested-chips" id="suggestedChips">
             <div class="chip" onclick="sendChip('What is the H-R diagram?')">What is the H-R diagram?</div>
-            <div class="chip" onclick="sendChip('Explain the Main Sequence')">Explain the Main Sequence</div>
-            <div class="chip" onclick="sendChip('Tell me about White Dwarfs')">Tell me about White Dwarfs</div>
+            <div class="chip" onclick="sendChip('Why is the X-axis reversed?')">Why is the X-axis reversed?</div>
+            <div class="chip" onclick="sendChip('Tell me about white dwarfs')">Tell me about white dwarfs</div>
+            <div class="chip" onclick="sendChip('How do I plot a star?')">How do I plot a star?</div>
         </div>
         <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Ask about axes, star types, life cycles..." onkeypress="handleKeyPress(event)">
+            <input type="text" id="chatInput" placeholder="Ask anything about stars or the H-R diagram..." onkeypress="handleKeyPress(event)">
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
@@ -223,6 +328,7 @@ const minLum = 0.0001;
 const maxLum = 1000000;
 
 const stars = [];
+const customStars = [];
 
 function createStar(temp, lum, label = '', type = 'Unknown') {
     return { temp, lum, label, type };
@@ -345,6 +451,7 @@ function getSuperscript(num) {
 }
 
 function drawStars() {
+    // Draw background stars
     stars.forEach(star => {
         const x = getX(star.temp);
         const y = getY(star.lum);
@@ -366,6 +473,28 @@ function drawStars() {
             ctx.arc(x, y, 2.2, 0, 2 * Math.PI);
             ctx.fillStyle = hexToRgba(color, 0.65); 
             ctx.fill();
+        }
+    });
+
+    // Draw custom user-plotted stars
+    customStars.forEach(star => {
+        const x = getX(star.temp);
+        const y = getY(star.lum);
+        const color = getStarColor(star.temp);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        if (star.label) {
+            ctx.fillStyle = '#22d3ee';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(` ${star.label}`, x + 8, y - 8);
         }
     });
 }
@@ -395,13 +524,18 @@ canvas.addEventListener('mousemove', (e) => {
         if (dist < minDist) { minDist = dist; activeStar = star; }
     });
 
+    customStars.forEach(star => {
+        const dist = Math.hypot(mouseX - getX(star.temp), mouseY - getY(star.lum));
+        if (dist < minDist) { minDist = dist; activeStar = star; }
+    });
+
     if (activeStar) {
         tooltip.style.opacity = '1';
         tooltip.style.left = `${e.clientX + 12}px`;
         tooltip.style.top = `${e.clientY + 12}px`;
         tooltip.innerHTML = `
             ${activeStar.label ? `<strong>${activeStar.label}</strong><br/>` : ''}
-            Group: ${activeStar.type}<br/>
+            Type: ${activeStar.type}<br/>
             Temp: ${Math.round(activeStar.temp).toLocaleString()} K<br/>
             Lum: ${activeStar.lum.toFixed(4).replace(/\.?0+$/, "")} L☉
         `;
@@ -411,41 +545,66 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseleave', () => tooltip.style.opacity = '0');
 render();
 
-// --- AI INTELLIGENCE SYSTEM LOGIC ---
-const qaDatabase = [
-    {
-        keywords: ['what is', 'hr diagram', 'h-r', 'hertzsprung', 'definition', 'explain diagram'],
-        reply: "The <strong>Hertzsprung-Russell (H-R) Diagram</strong> is a graphical tool used by astrophysicists to classify stars. It maps a star's <strong>Absolute Luminosity (Brightness)</strong> on the Y-axis against its <strong>Effective Surface Temperature</strong> (or Spectral Class) on the X-axis."
-    },
-    {
-        keywords: ['reverse', 'x-axis', 'wrong way', 'temperature scale', 'left'],
-        reply: "Great observation! The X-axis is <strong>intentionally reversed</strong> by historical astronomical convention. High, hot temperatures (up to 40,000 K) scale on the <strong>left side</strong> (O/B spectral types), while cool temperatures (down to 2,000 K) lie on the <strong>right side</strong> (M types)."
-    },
-    {
-        keywords: ['main sequence', 'diagonal', 'band', 'sun type'],
-        reply: "The <strong>Main Sequence</strong> is the prominent diagonal band spanning from top-left (hot, bright) to bottom-right (cool, faint). Stars spend about <strong>90% of their life cycles</strong> here, stably fusing Hydrogen into Helium within their cores. Our <strong>Sun</strong> sits directly in this sequence!"
-    },
-    {
-        keywords: ['white dwarf', 'bottom left', 'sirius b'],
-        reply: "<strong>White Dwarfs</strong> are found in the bottom-left corner. They possess <strong>extremely high temperatures</strong> but <strong>very low luminosity</strong> because they are incredibly small (roughly Earth-sized). They represent the dead, cooling stellar cores left behind by low-to-medium mass stars like our Sun."
-    },
-    {
-        keywords: ['giant', 'supergiant', 'betelgeuse', 'rigel', 'top right'],
-        reply: "<strong>Giants and Supergiants</strong> dominate the upper-middle and top regions. They are highly luminous due to their massive surface areas, despite having relatively cool temperatures (like the red supergiant <strong>Betelgeuse</strong>) or extremely high temperatures (like the blue supergiant <strong>Rigel</strong>)."
-    },
-    {
-        keywords: ['sun', 'sol', 'our star'],
-        reply: "The <strong>Sun</strong> serves as the reference point for the diagram! It has an effective surface temperature of <strong>5,778 Kelvin</strong> and exactly <strong>1.0 Luminosity (L☉)</strong>, mapping right in the middle of the yellow Main Sequence field (Spectral Class G)."
-    },
-    {
-        keywords: ['luminosity', 'y-axis', 'brightness', 'solar units', 'l☉'],
-        reply: "The Y-axis scales a star's <strong>Luminosity</strong> logarithmically. It represents energy output relative to our Sun (L☉). The scale ranges from <strong>10⁻⁴ (0.0001x Sun's brightness)</strong> for tiny dwarfs up to <strong>10⁶ (1,000,000x Sun's brightness)</strong> for hypergiants."
-    },
-    {
-        keywords: ['spectral', 'letters', 'o b a f g k m', 'class'],
-        reply: "The letters across the top (<strong>O, B, A, F, G, K, M</strong>) represent stellar <strong>Spectral Classes</strong> based on ionization lines. You can easily remember them using the mnemonic: <em>'Oh Be A Fine Girl/Guy, Kiss Me!'</em>. O is the hottest/blue; M is the coolest/red."
+// --- STAR PLOTTING FUNCTIONALITY ---
+function plotCustomStar() {
+    const temp = parseFloat(document.getElementById('tempInput').value);
+    const lum = parseFloat(document.getElementById('lumInput').value);
+    const name = document.getElementById('starNameInput').value || 'Custom Star';
+
+    if (!temp || !lum || temp < 1000 || temp > 50000 || lum < 0.0001 || lum > 1000000) {
+        alert('Please enter valid temperature (1000-50000 K) and luminosity (0.0001-1000000 L☉)');
+        return;
     }
-];
+
+    customStars.push(createStar(temp, lum, name, 'Custom'));
+    render();
+    appendMessage(`<strong>✨ Plotted star:</strong> ${name} (${Math.round(temp)} K, ${lum} L☉)`, 'ai');
+}
+
+function clearCustomStars() {
+    customStars.length = 0;
+    render();
+    appendMessage('Custom stars cleared from the diagram.', 'ai');
+}
+
+// --- AI CHAT WITH CLAUDE API ---
+async function sendMessage() {
+    const inputEl = document.getElementById('chatInput');
+    const query = inputEl.value.trim();
+    if (!query) return;
+
+    appendMessage(query, 'user');
+    inputEl.value = '';
+
+    try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 500,
+                system: 'You are an expert astrophysicist specializing in stellar classification and the Hertzsprung-Russell diagram. Provide clear, educational answers about stars, H-R diagrams, stellar evolution, and star properties. Keep responses concise and engaging. When relevant, mention where stars plot on the H-R diagram.',
+                messages: [
+                    { role: 'user', content: query }
+                ]
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.content && data.content[0]) {
+            const aiReply = data.content[0].text;
+            appendMessage(aiReply, 'ai');
+        } else {
+            appendMessage('Sorry, I encountered an issue. Please try again.', 'ai');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        appendMessage('Sorry, I couldn\'t reach the AI service. Please try again.', 'ai');
+    }
+}
 
 function handleKeyPress(event) {
     if (event.key === 'Enter') sendMessage();
@@ -456,22 +615,6 @@ function sendChip(text) {
     sendMessage();
 }
 
-function sendMessage() {
-    const inputEl = document.getElementById('chatInput');
-    const query = inputEl.value.trim();
-    if (!query) return;
-
-    // Display user text element
-    appendMessage(query, 'user');
-    inputEl.value = '';
-
-    // Process intelligence logic delay simulation
-    setTimeout(() => {
-        const reply = lookupResponse(query);
-        appendMessage(reply, 'ai');
-    }, 450);
-}
-
 function appendMessage(text, sender) {
     const container = document.getElementById('chatMessages');
     const msgDiv = document.createElement('div');
@@ -479,20 +622,6 @@ function appendMessage(text, sender) {
     msgDiv.innerHTML = text;
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
-}
-
-function lookupResponse(input) {
-    const cleanInput = input.toLowerCase();
-    
-    // Scan keywords database weights
-    for (const entry of qaDatabase) {
-        if (entry.keywords.some(keyword => cleanInput.includes(keyword))) {
-            return entry.reply;
-        }
-    }
-    
-    // Fallback out of bounds catch string
-    return "I'm not completely sure about that specific detail. Try asking about the <strong>Main Sequence</strong>, <strong>White Dwarfs</strong>, why the <strong>X-axis is reversed</strong>, or characteristics of the <strong>Sun</strong>!";
 }
 </script>
 
