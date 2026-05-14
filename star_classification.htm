@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Classification Explorer</title>
+    <style>
+        :root {
+            --bg-space: #050510;
+            --panel-bg: #111222;
+            --text-light: #e0e0ff;
+            --accent-blue: #4a90e2;
+            --star-o: #9bb0ff; --star-b: #aabfff; --star-a: #cad7ff;
+            --star-f: #f8f7ff; --star-g: #fff4ea; --star-k: #ffd2a1; --star-m: #ff9e9e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-space); color: var(--text-light); padding: 20px; overflow-x: hidden; }
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { font-size: 2.5rem; color: #fff; text-shadow: 0 0 10px var(--accent-blue); }
+        header p { color: #8a8ab0; margin-top: 5px; }
+        
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1400px; margin: 0 auto; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        
+        .panel { background: var(--panel-bg); border: 1px solid #222544; border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #222544; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; color: #6a6a90; font-size: 1rem; font-weight: bold; cursor: pointer; padding: 8px 16px; transition: 0.3s; }
+        .tab-btn.active { color: var(--accent-blue); border-bottom: 2px solid var(--accent-blue); margin-bottom: -12px; }
+        
+        .control-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #a0a0c0; }
+        select, input { width: 100%; padding: 10px; background: #1c1d36; border: 1px solid #333765; border-radius: 6px; color: #fff; font-size: 1rem; }
+        
+        .star-display-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; background: radial-gradient(circle, #161730 0%, #090a14 100%); border-radius: 12px; position: relative; overflow: hidden; }
+        .star-glow { width: 100px; height: 100px; border-radius: 50%; transition: all 0.5s ease; box-shadow: 0 0 60px 20px currentColor; }
+        
+        .hr-diagram { position: relative; width: 100%; height: 400px; background: #0c0d1a; border: 2px solid #222544; border-radius: 8px; margin-top: 10px; }
+        .hr-axis-y { position: absolute; left: 10px; top: 50%; transform: rotate(-90deg) translateY(-50%); transform-origin: left; color: #6a6a90; font-size: 0.8rem; }
+        .hr-axis-x { position: absolute; bottom: 5px; width: 100%; text-align: center; color: #6a6a90; font-size: 0.8rem; }
+        .hr-pointer { position: absolute; width: 12px; height: 12px; border: 2px solid #fff; background: red; border-radius: 50%; transform: translate(-50%, -50%); transition: left 0.5s, top 0.5s; box-shadow: 0 0 10px #fff; }
+        .hr-bg-line { position: absolute; font-size: 0.7rem; color: #333765; pointer-events: none; }
+
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .data-card { background: #1c1d36; padding: 12px; border-radius: 6px; border-left: 4px solid var(--accent-blue); }
+        .data-card .title { font-size: 0.8rem; color: #8a8ab0; text-transform: uppercase; }
+        .data-card .value { font-size: 1.2rem; font-weight: bold; margin-top: 5px; }
+        
+        .info-text { line-height: 1.6; color: #b0b0d0; font-size: 0.95rem; }
+        .info-text h3 { color: #fff; margin: 15px 0 5px 0; }
+        .info-text ul { margin-left: 20px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Star Classification Explorer</h1>
+    <p>Interactive Morgan-Keenan (MK) and Hertzsprung-Russell System Systematisation</p>
+</header>
+
+<div class="container">
+    <!-- Left Panel: Controls and Classification Parameters -->
+    <div class="panel">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('presets')">Presets By Star Type</button>
+            <button class="tab-btn" onclick="switchTab('custom')">Manual MK Parameters</button>
+        </div>
+
+        <div id="presets-controls">
+            <div class="control-group">
+                <label for="star-preset">Select Known Star Type:</label>
+                <select id="star-preset" onchange="loadPreset()">
+                    <option value="siriusA">Sirius A (A1V Main Sequence Blue-White)</option>
+                    <option value="sun">The Sun (G2V Main Sequence Yellow Dwarf)</option>
+                    <option value="betelgeuse">Betelgeuse (M1Iab Red Supergiant)</option>
+                    <option value="arcturus">Arcturus (K1III Orange Giant)</option>
+                    <option value="proxima">Proxima Centauri (M6V Red Dwarf)</option>
+                    <option value="rigel">Rigel (B8Ia Blue Supergiant)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="custom-controls" style="display:none;">
+            <div class="control-group">
+                <label for="spectral-class">Spectral Class (Temperature scale: O - M):</label>
+                <select id="spectral-class" onchange="updateCustom()">
+                    <option value="O">O (&gt; 30,000 K - Blue)</option>
+                    <option value="B">B (10,000 K - 30,000 K - Blue-White)</option>
+                    <option value="A" selected>A (7,500 K - 10,000 K - White)</option>
+                    <option value="F">F (6,000 K - 7,500 K - Yellow-White)</option>
+                    <option value="G">G (5,200 K - 6,000 K - Yellow)</option>
+                    <option value="K">K (3,700 K - 5,200 K - Orange)</option>
+                    <option value="M">M (2,400 K - 3,700 K - Red)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="luminosity-class">Luminosity Class (Size / Density scale):</label>
+                <select id="luminosity-class" onchange="updateCustom()">
+                    <option value="Ia">Ia (Hypergiants / Luminous Supergiants)</option>
+                    <option value="Ib">Ib (Less Luminous Supergiants)</option>
+                    <option value="III">III (Normal Giants)</option>
+                    <option value="V" selected>V (Main Sequence / Dwarfs)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="info-text">
+            <h3>Understanding the Frameworks</h3>
+            <p>Stars are categorized simultaneously using two primary methodologies:</p>
+            <ul>
+                <li><strong>Harvard Classification:</strong> Alphabetical classes (O, B, A, F, G, K, M) mapping surface temperature from hottest to coolest.</li>
+                <li><strong>Yerkes (MK) Classification:</strong> Roman numerals (I-V) tracking atmospheric density, directly identifying the star's evolutionary stage (Giants vs Dwarfs).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Right Panel: Visualisation (Star Engine & HR Diagram) -->
+    <div class="panel">
+        <div class="star-display-box">
+            <div id="star-element" class="star-glow"></div>
+            <div class="data-grid" style="width: 90%; position: absolute; bottom: 10px; background: rgba(17,18,34,0.85); padding: 10px; border-radius: 8px;">
+                <div class="data-card"><div class="title">Spectral Type</div><div id="val-type" class="value">-</div></div>
+                <div class="data-card"><div class="title">Temperature Range</div><div id="val-temp" class="value">-</div></div>
+                <div class="data-card"><div class="title">Luminosity Profile</div><div id="val-lum" class="value">-</div></div>
+                <div class="data-card"><div class="title">Color Index</div><div id="val-color" class="value">-</div></div>
+            </div>
+        </div>
+
+        <h3 style="margin-top:20px; font-size:1rem; color:#a0a0c0;">Position on Hertzsprung-Russell Diagram</h3>
+        <div class="hr-diagram">
+            <span class="hr-axis-y">Luminosity (Solar Units L☉) →</span>
+            <span class="hr-axis-x">← Temperature (Kelvin) / Spectral Class</span>
+            
+            <!-- Static visual anchors inside HR diagram grid -->
+            <div class="hr-bg-line" style="left:10%; top:20%;">Supergiants (I)</div>
+            <div class="hr-bg-line" style="left:40%; top:50%;">Giants (III)</div>
+            <div class="hr-bg-line" style="left:70%; top:70%; transform: rotate(25deg);">Main Sequence (V)</div>
+            
+            <!-- Dynamic Tracker -->
+            <div id="hr-dot" class="hr-pointer"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // System Data Engine Maps
+    const starPresets = {
+        sun: { spectral: 'G', lumClass: 'V', label: 'G2V (Yellow Dwarf)', temp: '5,778 K', scale: 0.6, color: 'var(--star-g)', hrX: 65, hrY: 65, desc: 'Main Sequence Dwarf' },
+        siriusA: { spectral: 'A', lumClass: 'V', label: 'A1V (White Main Sequence)', temp: '9,940 K', scale: 0.8, color: 'var(--star-a)', hrX: 35, hrY: 45, desc: 'Main Sequence Dwarf' },
+        betelgeuse: { spectral: 'M', lumClass: 'Ia', label: 'M1Iab (Red Supergiant)', temp: '3,500 K', scale: 1.5, color: 'var(--star-m)', hrX: 85, hrY: 15, desc: 'Supergiant' },
+        arcturus: { spectral: 'K', lumClass: 'III', label: 'K1III (Orange Giant)', temp: '4,286 K', scale: 1.1, color: 'var(--star-k)', hrX: 75, hrY: 40, desc: 'Normal Giant' },
+        proxima: { spectral: 'M', lumClass: 'V', label: 'M6V (Red Dwarf)', temp: '3,042 K', scale: 0.3, color: 'var(--star-m)', hrX: 90, hrY: 85, desc: 'Main Sequence Red Dwarf' },
+        rigel: { spectral: 'B', lumClass: 'Ia', label: 'B8Ia (Blue Supergiant)', temp: '12,100 K', scale: 1.6, color: 'var(--star-b)', hrX: 20, hrY: 12, desc: 'Supergiant' }
+    };
+
+    const spectralDetails = {
+        O: { temp: '> 30,000 K', color: 'var(--star-o)', desc: 'Blue / Highly Ionised Helium Lines' },
+        B: { temp: '10,000 K - 30,000 K', color: 'var(--star-b)', desc: 'Blue-White / Neutral Helium' },
+        A: { temp: '7,500 K - 10,000 K', color: 'var(--star-a)', desc: 'White / Strong Hydrogen Lines' },
+        F: { temp: '6,000 K - 7,500 K', color: 'var(--star-f)', desc: 'Yellow-White / Ionised Calcium' },
+        G: { temp: '5,200 K - 6,000 K', color: 'var(--star-g)', desc: 'Yellow / Neutral Metals' },
+        K: { temp: '3,700 K - 5,200 K', color: 'var(--star-k)', desc: 'Orange / Titanium Oxide traces' },
+        M: { temp: '< 3,700 K', color: 'var(--star-m)', desc: 'Red / Dominant Titanium Oxide molecules' }
+    };
+
+    const luminosityDetails = {
+        Ia: { desc: 'Luminous Supergiant', yOffset: 15 },
+        Ib: { desc: 'Less Luminous Supergiant', yOffset: 25 },
+        III: { desc: 'Giant', yOffset: 45 },
+        V: { desc: 'Main Sequence (Dwarf)', yOffset: 70 }
+    };
+
+    const hrXMapping = { O: 10, B: 25, A: 40, F: 55, G: 68, K: 80, M: 92 };
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (tabId === 'presets') {
+            document.getElementById('presets-controls').style.display = 'block';
+            document.getElementById('custom-controls').style.display = 'none';
+            loadPreset();
+        } else {
+            document.getElementById('presets-controls').style.display = 'none';
+            document.getElementById('custom-controls').style.display = 'block';
+            updateCustom();
+        }
+    }
+
+    function renderStar(color, scale, spectral, lumClass, tempStr, lumStr) {
+        const star = document.getElementById('star-element');
+        star.style.color = color;
+        star.style.transform = `scale(${scale})`;
+        
+        document.getElementById('val-type').innerText = `${spectral} ${lumClass}`;
+        document.getElementById('val-temp').innerText = tempStr;
+        document.getElementById('val-lum').innerText = lumStr;
+        document.getElementById('val-color').innerText = spectralDetails[spectral].desc.split(' / ')[0];
+    }
+
+    function updateHRDiagram(xPercent, yPercent) {
+        const dot = document.getElementById('hr-dot');
+        dot.style.left = `${xPercent}%`;
+        dot.style.top = `${yPercent}%`;
+    }
+
+    function loadPreset() {
+        const key = document.getElementById('star-preset').value;
+        const config = starPresets[key];
+        
+        renderStar(config.color, config.scale, config.spectral, config.lumClass, config.temp, config.desc);
+        updateHRDiagram(config.hrX, config.hrY);
+    }
+
+    function updateCustom() {
+        const sClass = document.getElementById('spectral-class').value;
+        const lClass = document.getElementById('luminosity-class').value;
+        
+        const specInfo = spectralDetails[sClass];
+        const lumInfo = luminosityDetails[lClass];
+        
+        // Calculate dynamic relative position adjustments on the HR Diagram coordinate engine
+        let xPos = hrXMapping[sClass];
+        let yPos = lumInfo.yOffset;
+        
+        // Adjust main-sequence curve interpolation dynamically if it is class V
+        if (lClass === 'V') {
+            yPos = 30 + (xPos * 0.6); 
+        }
+
+        // Compute dynamic scales based on stellar evolution sizing rules
+        let visualScale = 0.8;
+        if (lClass.includes('I')) visualScale = 1.4;
+        if (lClass === 'III') visualScale = 1.1;
+        if (lClass === 'V' && (sClass === 'K' || sClass === 'M')) visualScale = 0.4;
+
+        renderStar(specInfo.color, visualScale, sClass, lClass, specInfo.temp, lumInfo.desc);
+        updateHRDiagram(xPos, yPos);
+    }
+
+    // Initialize Engine Bootstrap
+    window.onload = () => {
+        loadPreset();
+    };
+</script>
+</body>
+</html>
