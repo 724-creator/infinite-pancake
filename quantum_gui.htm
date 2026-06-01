@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumOS Terminal</title>
+    <style>
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-purple: #9d4edd;
+            --dark-bg: #0a0a12;
+            --panel-bg: rgba(16, 16, 32, 0.75);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(157, 78, 221, 0.15) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, rgba(0, 243, 255, 0.15) 0px, transparent 50%);
+        }
+
+        /* Desktop Grid */
+        .desktop {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-gap: 20px;
+            padding: 30px;
+            height: calc(100vh - 50px);
+            align-content: start;
+        }
+
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .app-icon:hover {
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .icon-symbol {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .icon-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* Window Management */
+        .window {
+            display: none;
+            position: absolute;
+            top: 15%;
+            left: 25%;
+            width: 50%;
+            height: 55%;
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 6px;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .window-header {
+            background: rgba(0, 243, 255, 0.1);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--neon-cyan);
+        }
+
+        .window-title {
+            color: var(--neon-cyan);
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #ff4757;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .window-body {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Taskbar */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: rgba(10, 10, 18, 0.9);
+            border-top: 1px solid var(--neon-purple);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .status-telemetry {
+            color: var(--neon-purple);
+            font-size: 0.8rem;
+            text-shadow: 0 0 5px var(--neon-purple);
+        }
+
+        /* Custom App Styling */
+        .quantum-btn {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.2s;
+        }
+
+        .quantum-btn:hover {
+            background: var(--neon-cyan);
+            color: black;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .bar-container {
+            background: #222;
+            height: 20px;
+            margin-top: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+            width: 0%;
+            height: 100%;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Desktop Environment -->
+    <div class="desktop">
+        <div class="app-icon" onclick="openWindow('compiler')">
+            <span class="icon-symbol">⚛️</span>
+            <span class="icon-label">Q-Compiler</span>
+        </div>
+        <div class="app-icon" onclick="openWindow('teleport')">
+            <span class="icon-symbol">🌀</span>
+            <span class="icon-label">Data Link</span>
+        </div>
+        <div class="app-icon" onclick="openWindow('crypto')">
+            <span class="icon-symbol">🔐</span>
+            <span class="icon-label">Encrypter</span>
+        </div>
+    </div>
+
+    <!-- App 1: Compiler -->
+    <div id="compiler" class="window">
+        <div class="window-header">
+            <span class="window-title">Quantum Circuit Compiler v4.0</span>
+            <button class="close-btn" onclick="closeWindow('compiler')">×</button>
+        </div>
+        <div class="window-body">
+            <p>Status: Qubits coherent at 99.98% operational efficiency.</p>
+            <p style="margin-top: 10px; color: #888;">// Click below to inject Hadamard gates and collapse probabilities into usable binary data structures.</p>
+            <button class="quantum-btn" onclick="runCompiler()">Execute Superposition</button>
+            <div class="bar-container"><div id="compiler-bar" class="bar-fill"></div></div>
+            <p id="compiler-output" style="margin-top: 15px; color: var(--neon-cyan);"></p>
+        </div>
+    </div>
+
+    <!-- App 2: Teleportation Link -->
+    <div id="teleport" class="window">
+        <div class="window-header">
+            <span class="window-title">Entanglement Distribution Network</span>
+            <button class="close-btn" onclick="closeWindow('teleport')">×</button>
+        </div>
+        <div class="window-body">
+            <p>Establish a zero-latency entanglement channel with remote servers.</p>
+            <button class="quantum-btn" onclick="runTeleport()">Sync Entangled Pairs</button>
+            <p id="teleport-output" style="margin-top: 15px; font-family: monospace; color: #00ff00;"></p>
+        </div>
+    </div>
+
+    <!-- App 3: Cryptography -->
+    <div id="crypto" class="window">
+        <div class="window-header">
+            <span class="window-title">Post-Quantum Key Generator</span>
+            <button class="close-btn" onclick="closeWindow('crypto')">×</button>
+        </div>
+        <div class="window-body">
+            <p>Secure your local mainframe using unbreakable lattice-based cryptography mathematical keys.</p>
+            <button class="quantum-btn" onclick="runCrypto()">Generate Q-Key</button>
+            <p id="crypto-output" style="margin-top: 15px; word-break: break-all; color: var(--neon-purple);"></p>
+        </div>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <div class="taskbar">
+        <div class="status-telemetry">SYS_TEMP: 0.015 K // COHERENCE: MAX</div>
+        <div class="status-telemetry" id="clock">00:00:00</div>
+    </div>
+
+    <script>
+        // Window Management
+        function openWindow(id) {
+            document.querySelectorAll('.window').forEach(w => w.style.display = 'none');
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeWindow(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // App 1 Logic
+        function runCompiler() {
+            const bar = document.getElementById('compiler-bar');
+            const output = document.getElementById('compiler-output');
+            bar.style.width = '0%';
+            output.innerText = 'Collapsing probability waves...';
+            
+            setTimeout(() => {
+                bar.style.width = '100%';
+                setTimeout(() => {
+                    const states = ['|0110101𝜓⟩', '|1100110𝜓⟩', '|0001111𝜓⟩'];
+                    const picked = states[Math.floor(Math.random() * states.length)];
+                    output.innerText = `Success! Circuit collapsed to state: ${picked}`;
+                }, 500);
+            }, 100);
+        }
+
+        // App 2 Logic
+        function runTeleport() {
+            const output = document.getElementById('teleport-output');
+            output.innerText = 'Connecting to Node-Sydney...';
+            setTimeout(() => { output.innerText += '\n[OK] Spooky action at a distance confirmed.'; }, 600);
+            setTimeout(() => { output.innerText += '\n[OK] Teleported 4.2 Petabytes via quantum state swapping.'; }, 1200);
+        }
+
+        // App 3 Logic
+        function runCrypto() {
+            const output = document.getElementById('crypto-output');
+            let key = '🔑 KEY: ';
+            const chars = 'ABCDEF𝜓𝜆𝛷𝛀0123456789';
+            for (let i = 0; i < 32; i++) {
+                key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            output.innerText = key;
+        }
+
+        // Clock Update
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+    </script>
+</body>
+</html>
