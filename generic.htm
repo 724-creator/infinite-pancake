@@ -1,4 +1,199 @@
-<html>
-<script type="text/javascript">
-</script>
-</html> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Planner Loading Page</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 24px;
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        /* Loading Screen Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Input Form Card -->
+    <div class="container" id="formCard">
+        <h1>Future Planner</h1>
+        <form id="goalForm">
+            <div class="form-group">
+                <label for="dreamJob">Dream Job</label>
+                <input type="text" id="dreamJob" placeholder="e.g. Software Engineer, Doctor" required>
+            </div>
+
+            <div class="form-group">
+                <label for="pathway">Pathway After School</label>
+                <select id="pathway" required>
+                    <option value="">Select a pathway...</option>
+                    <option value="university">University</option>
+                    <option value="tafe">TAE / VET / College</option>
+                    <option value="apprenticeship">Apprenticeship / Traineeship</option>
+                    <option value="workforce">Direct Workforce</option>
+                    <option value="gap-year">Gap Year</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="atarGoal">ATAR Goal (0.00 - 99.95)</label>
+                <input type="number" id="atarGoal" min="0" max="99.95" step="0.05" placeholder="e.g. 85.00">
+            </div>
+
+            <button type="submit">Generate My Plan</button>
+        </form>
+    </div>
+
+    <!-- Loading Screen Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingMessage">Mapping your pathway...</div>
+    </div>
+
+    <script>
+        const form = document.getElementById('goalForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingMessage = document.getElementById('loadingMessage');
+
+        // Messages to cycle through while loading
+        const messages = [
+            "Analysing ATAR requirements...",
+            "Sourcing tertiary pathways...",
+            "Designing your career roadmap..."
+        ];
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show the loading screen
+            loadingOverlay.style.display = 'flex';
+            
+            // Cycle through helpful messages every 1.5 seconds
+            let messageIndex = 0;
+            const messageInterval = setInterval(() => {
+                if (messageIndex < messages.length) {
+                    loadingMessage.innerText = messages[messageIndex];
+                    messageIndex++;
+                }
+            }, 1500);
+
+            // Simulate database processing/redirecting after 5 seconds
+            setTimeout(() => {
+                clearInterval(messageInterval);
+                alert("Loading complete! Your custom pathway plan is ready.");
+                
+                // Reset form and screen
+                loadingOverlay.style.display = 'none';
+                loadingMessage.innerText = "Mapping your pathway...";
+                form.reset();
+                
+                // You can replace the alert with a redirect link like:
+                // window.location.href = "results.html";
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
